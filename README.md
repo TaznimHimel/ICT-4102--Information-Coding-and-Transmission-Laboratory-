@@ -91,7 +91,7 @@ This repository includes implementations of the following experiments:
 Activate environment:
 
 - On Windows:
-    
+
         venv\Scripts\activate
 
 - On Linux/Mac:
