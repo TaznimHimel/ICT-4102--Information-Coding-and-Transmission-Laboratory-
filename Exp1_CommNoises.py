@@ -1,66 +1,82 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Simulate a clean signal (sine wave)
-fs = 1000
-t = np.linspace(0, 1, fs)
-freq = 5
-clean_signal = np.sin(2 * np.pi * freq * t)
+# Signal Parameters
+fs = 2000                     # Sampling frequency
+t = np.arange(0, 0.5, 1/fs)   # Time vector
+f_sig = 10                    # Signal frequency (10 Hz)
+signal = np.sin(2*np.pi*f_sig*t)   # Clean sine wave
+N = len(t)
 
-# 1. AWGN Noise (Modified)
-snr_db = 10  # Desired SNR in dB
-signal_power = np.mean(clean_signal**2)
-snr_linear = 10**(snr_db / 10)
+# -------------------------------
+# 1. Random Noise (Uniform)
+noise_random = 0.5 * (2 * np.random.rand(N) - 1)
+sig_random = signal + noise_random
+
+# -------------------------------
+# 2. Thermal Noise (Gaussian)
+thermal_std = 0.1
+noise_thermal = thermal_std * np.random.randn(N)
+sig_thermal = signal + noise_thermal
+
+# -------------------------------
+# 3. Impulse Noise (Spikes)
+noise_impulse = np.zeros(N)
+spike_locations = np.random.choice(N, 15, replace=False)
+noise_impulse[spike_locations] = 1.5 * np.sign(np.random.randn(15))
+sig_impulse = signal + noise_impulse
+
+# -------------------------------
+# 4. AWGN (Manual implementation)
+snr_db = 5
+
+# Signal power
+signal_power = np.mean(signal**2)
+
+# Convert SNR from dB to linear
+snr_linear = 10**(snr_db/10)
+
+# Noise power
 noise_power = signal_power / snr_linear
 
-awgn_noise = np.random.normal(0, np.sqrt(noise_power), fs)
-noisy_signal_awgn = clean_signal + awgn_noise
+# Generate noise
+noise_awgn = np.sqrt(noise_power) * np.random.randn(N)
+sig_awgn = signal + noise_awgn
 
-# 2. Impulse Noise
-impulse_noise = np.zeros(fs)
-impulse_positions = np.random.randint(0, fs, size=50)
-impulse_noise[impulse_positions] = np.random.choice([-5, 5], size=50)
-noisy_signal_impulse = clean_signal + impulse_noise
+# -------------------------------
+# Visualization
+plt.figure(figsize=(10, 10))
 
-# 3. Thermal Noise
-thermal_noise = np.random.normal(0, 0.1, fs)
-noisy_signal_thermal = clean_signal + thermal_noise
+# Original Signal
+plt.subplot(5,1,1)
+plt.plot(t, signal, 'k')
+plt.title("Original Clean Signal (Sine Wave)")
+plt.grid()
 
-# 4. Random Noise
-random_noise = np.random.uniform(-1, 1, fs)
-noisy_signal_random = clean_signal + random_noise
+# Random Noise
+plt.subplot(5,1,2)
+plt.plot(t, sig_random, 'r')
+plt.title("Signal + Random (Uniform) Noise")
+plt.grid()
 
-# Plot
-plt.figure(figsize=(10, 12))
+# Thermal Noise
+plt.subplot(5,1,3)
+plt.plot(t, sig_thermal, 'm')
+plt.title("Signal + Thermal Noise (Gaussian)")
+plt.grid()
 
-plt.subplot(5, 1, 1)
-plt.plot(t, clean_signal)
-plt.title("Clean Signal (Sine Wave)")
+# Impulse Noise
+plt.subplot(5,1,4)
+plt.plot(t, sig_impulse, 'b')
+plt.title("Signal + Impulse Noise (Spikes)")
+plt.grid()
 
-plt.subplot(5, 1, 2)
-plt.plot(t, noisy_signal_awgn)
-plt.title("Noisy Signal with AWGN")
-
-plt.subplot(5, 1, 3)
-plt.plot(t, noisy_signal_impulse)
-plt.title("Noisy Signal with Impulse Noise")
-
-plt.subplot(5, 1, 4)
-plt.plot(t, noisy_signal_thermal)
-plt.title("Noisy Signal with Thermal Noise")
-
-plt.subplot(5, 1, 5)
-plt.plot(t, noisy_signal_random)
-plt.title("Noisy Signal with Random Noise")
+# AWGN
+plt.subplot(5,1,5)
+plt.plot(t, sig_awgn, 'g')
+plt.title(f"Signal + AWGN (SNR = {snr_db} dB)")
+plt.xlabel("Time (s)")
+plt.grid()
 
 plt.tight_layout()
 plt.show()
-
-# SNR
-def snr(signal, noise):
-    return 10 * np.log10(np.var(signal) / np.var(noise))
-
-print(f"SNR AWGN: {snr(clean_signal, awgn_noise):.2f} dB")
-print(f"SNR Impulse: {snr(clean_signal, impulse_noise):.2f} dB")
-print(f"SNR Thermal: {snr(clean_signal, thermal_noise):.2f} dB")
-print(f"SNR Random: {snr(clean_signal, random_noise):.2f} dB")
