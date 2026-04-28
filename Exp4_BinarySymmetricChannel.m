@@ -1,29 +1,47 @@
 clc;
+
 clear;
+
 close all;
+%Error Probability P
+p = 0:0.01:1;
+%Channel Capacity 
+C = zeros(size(p));
 
-% Input probability of error
-p = input('Enter the probability of error (p) between 0 and 1: ');
+disp('   p      Channel Capacity (C)');
 
-if p < 0 || p > 1
-    error('p must be between 0 and 1');
+disp('---------------------------------');
+
+for i = 1:length(p)
+
+if p(i) == 0 || p(i) == 1
+
+    H = 0;
+
+else
+
+    H = -p(i)*log2(p(i)) - (1-p(i))*log2(1-p(i));
+
 end
 
-% Binary entropy function
-binary_entropy = @(x) -(x.*log2(x + eps) + (1-x).*log2(1-x + eps));
 
-% Channel capacity
-capacity = 1 - binary_entropy(p);
 
-fprintf('Channel Capacity of BSC with error probability %.2f: %.4f bits/channel use\n', p, capacity);
+C(i) = 1 - H;
 
-% Plot channel capacity
-p_values = linspace(0, 1, 100);
-capacity_values = 1 - binary_entropy(p_values);
+
+
+fprintf('%.2f      %.4f\n', p(i), C(i));
+
+end
 
 figure;
-plot(p_values, capacity_values, 'LineWidth', 2);
-title('Binary Symmetric Channel Capacity');
-xlabel('Error Probability (p)');
-ylabel('Channel Capacity (C)');
+
+plot(p, C, 'b', 'LineWidth', 2);
+
 grid on;
+
+title('Binary Symmetric Channel Capacity');
+
+xlabel('Error Probability (p)');
+
+ylabel('Channel Capacity (C)');

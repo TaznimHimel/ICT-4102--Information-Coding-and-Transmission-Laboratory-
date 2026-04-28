@@ -1,63 +1,48 @@
-clc;
-clear;
-
-symbols = {'A', 'B', 'C', 'D', 'E'};
-probabilities = [0.4, 0.3, 0.2, 0.05, 0.05];
-
-codes = shannonFano(symbols, probabilities);
-
-disp('Shannon-Fano Codes:');
+% User input (as requested)
+symbols = input('Enter symbols as cell array (e.g., {''A'',''B'',''C''}): ');
+p = input('Enter probabilities as vector (e.g., [0.5 0.3 0.2]): ');
+% Validation
+if length(symbols) ~= length(p)
+    error('Number of symbols and probabilities must be equal');
+end
+if abs(sum(p) - 1) > 1e-6
+    error('Probabilities must sum to 1');
+end
+% CDF
+F = cumsum(p);
+% Midpoint
+F_bar = F - p/2;
+% Code length
+l = ceil(log2(1./p)) + 1;
+% Precision
+precision = max(l) + 5;
+fprintf('%-8s %-8s %-8s %-10s %-15s %-6s %-10s\n', ...
+    'Symbol','p(x)','F(x)','F_bar(x)','F_bar(Binary)','l(x)','Codeword');
+fprintf('-----------------------------------------------------------------------\n');
+avg_length = 0;
+entropy = 0;
 for i = 1:length(symbols)
-    fprintf('Symbol: %s, Code: %s\n', symbols{i}, codes{i});
+    value = F_bar(i);
+    binary = '';
+    % Binary conversion
+    for j = 1:precision
+        value = value * 2;
+        if value >= 1
+            binary = [binary '1'];
+            value = value - 1;
+        else
+            binary = [binary '0'];
+        end
+    end
+    % Codeword
+    codeword = binary(1:l(i));
+    % Average length
+    avg_length = avg_length + p(i) * l(i);
+    % Entropy
+    entropy = entropy - p(i) * log2(p(i));
+    fprintf('%-8s %-8.3f %-8.3f %-10.4f %-15s %-6d %-10s\n', ...
+        symbols{i}, p(i), F(i), F_bar(i), ...
+        ['0.' binary(1:l(i))], l(i), codeword);
 end
-
-function codes = shannonFano(symbols, probabilities)
-    n = length(symbols);
-    codes = repmat({''}, 1, n);
-
-    % Sort by descending probability
-    [probabilities, idx] = sort(probabilities, 'descend');
-    symbols = symbols(idx);
-
-    codes_sorted = shannonFanoRecursive(symbols, probabilities);
-
-    % Restore original order
-    temp_codes = repmat({''}, 1, n);
-    for i = 1:n
-        temp_codes{idx(i)} = codes_sorted{i};
-    end
-    codes = temp_codes;
-end
-
-function codes = shannonFanoRecursive(symbols, probabilities)
-    n = length(symbols);
-    codes = repmat({''}, 1, n);
-
-    if n == 1
-        codes{1} = '';
-        return;
-    end
-
-    total = sum(probabilities);
-    cumulative = cumsum(probabilities);
-    [~, split_idx] = min(abs(cumulative - total/2));
-
-    left_symbols = symbols(1:split_idx);
-    left_prob = probabilities(1:split_idx);
-
-    right_symbols = symbols(split_idx+1:end);
-    right_prob = probabilities(split_idx+1:end);
-
-    left_codes = shannonFanoRecursive(left_symbols, left_prob);
-    right_codes = shannonFanoRecursive(right_symbols, right_prob);
-
-    for i = 1:length(left_codes)
-        left_codes{i} = ['0', left_codes{i}];
-    end
-
-    for i = 1:length(right_codes)
-        right_codes{i} = ['1', right_codes{i}];
-    end
-
-    codes = [left_codes, right_codes];
-end
+fprintf('\nAverage Codeword Length = %.3f bits\n', avg_length);
+fprintf('Entropy H = %.3f bits\n', entropy);

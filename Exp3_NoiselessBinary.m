@@ -1,36 +1,75 @@
 clc;
+
 clear;
+
 close all;
 
-% Generate random binary data
-data_length = 100;
-transmitted_data = randi([0 1], 1, data_length);
+% Number of bits (larger for practical simulation)
 
-% Noiseless channel
-received_data = transmitted_data;
+N = 1000;
 
-% Display data
-disp('Transmitted Data:');
-disp(transmitted_data);
+% Generate random binary input bits
 
-disp('Received Data:');
-disp(received_data);
+input_bits = randi([0 1], 1, N);
 
-% Plotting
+% Noiseless channel (output = input)
+
+output_bits = input_bits;
+
+% Display first few bits for clarity
+
+disp('First 20 Input Bits:');
+
+disp(input_bits(1:20));
+
+disp('First 20 Output Bits (After Noiseless Channel):');
+
+disp(output_bits(1:20));
+
+% Error calculation
+
+errors = sum(input_bits ~= output_bits);
+
+% Bit Error Rate (BER)
+
+ber = errors / N;
+
+% Display results
+
+fprintf('\nTotal Bits Transmitted: %d\n', N);
+
+fprintf('Number of Errors      : %d\n', errors);
+
+fprintf('Bit Error Rate (BER)  : %.6f\n', ber);
+
+% Visualization (show first 50 bits for clarity)
+
 figure;
 
-subplot(1,2,1);
-stairs(transmitted_data, 'b', 'LineWidth', 1.5);
-title('Transmitted Data');
+subplot(2,1,1);
+
+stem(input_bits(1:50), 'filled', 'LineWidth', 1.5);
+
+title('Input Binary Signal (First 50 Bits)');
+
 xlabel('Bit Index');
+
 ylabel('Bit Value');
-ylim([-0.5 1.5]);
+
+axis([0 51 -0.2 1.2]);
+
 grid on;
 
-subplot(1,2,2);
-stairs(received_data, 'g', 'LineWidth', 1.5);
-title('Received Data');
+subplot(2,1,2);
+
+stem(output_bits(1:50), 'r', 'filled', 'LineWidth', 1.5);
+
+title('Output Binary Signal (Noiseless, First 50 Bits)');
+
 xlabel('Bit Index');
+
 ylabel('Bit Value');
-ylim([-0.5 1.5]);
+
+axis([0 51 -0.2 1.2]);
+
 grid on;
