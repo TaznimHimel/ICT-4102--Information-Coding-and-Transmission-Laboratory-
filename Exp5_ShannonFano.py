@@ -1,54 +1,59 @@
-# Shannon-Fano Coding Algorithm
-# Step 1: Define the Shannon-Fano function
+import numpy as np
 
-def shannon_fano(symbols, probabilities):
-    # Base case
-    if len(symbols) == 1:
-        return {symbols[0]: ''}
+# User input
+symbols = input("Enter symbols (comma separated, e.g., A,B,C): ").split(',')
+p = list(map(float, input("Enter probabilities (space separated, e.g., 0.5 0.3 0.2): ").split()))
 
-    # Step 2: Sort symbols and probabilities in descending order
-    sorted_indices = sorted(range(len(probabilities)), key=lambda k: probabilities[k], reverse=True)
-    sorted_symbols = [symbols[i] for i in sorted_indices]
-    sorted_probabilities = [probabilities[i] for i in sorted_indices]
+# Validation
+if len(symbols) != len(p):
+    raise ValueError("Number of symbols and probabilities must be equal")
 
-    # Step 3: Divide into two parts
-    total_probability = sum(sorted_probabilities)
-    cumulative_probability = 0
+if abs(sum(p) - 1) > 1e-6:
+    raise ValueError("Probabilities must sum to 1")
 
-    for i in range(len(sorted_probabilities)):
-        cumulative_probability += sorted_probabilities[i]
-        if cumulative_probability >= total_probability / 2:
-            break
+p = np.array(p)
 
-    left_symbols = sorted_symbols[:i+1]
-    left_probabilities = sorted_probabilities[:i+1]
-    right_symbols = sorted_symbols[i+1:]
-    right_probabilities = sorted_probabilities[i+1:]
+# CDF
+F = np.cumsum(p)
 
-    # Step 4: Assign codes recursively
-    code_dict = {}
+# Midpoint
+F_bar = F - p/2
 
-    for symbol, code in shannon_fano(left_symbols, left_probabilities).items():
-        code_dict[symbol] = '0' + code
+# Code length
+l = np.ceil(np.log2(1/p)).astype(int) + 1
 
-    if right_symbols:
-        for symbol, code in shannon_fano(right_symbols, right_probabilities).items():
-            code_dict[symbol] = '1' + code
+# Precision
+precision = max(l) + 5
 
-    return code_dict
+print(f"{'Symbol':<8}{'p(x)':<8}{'F(x)':<8}{'F_bar(x)':<10}{'F_bar(Binary)':<15}{'l(x)':<6}{'Codeword':<10}")
+print("-"*75)
 
-
-# Step 5: Input the symbols and their corresponding probabilities
-symbols = ['A', 'B', 'C', 'D', 'E']
-probabilities = [0.4, 0.3, 0.2, 0.05, 0.05]
-
-# Step 6: Call the Shannon-Fano function
-codes = shannon_fano(symbols, probabilities)
-
-# Step 7: Display result
-print("Shannon-Fano Codes:")
-print("Symbol\tProbability\tCode")
+avg_length = 0
+entropy = 0
 
 for i in range(len(symbols)):
-    symbol = symbols[i]
-    print(f"{symbol}\t{probabilities[i]}\t\t{codes[symbol]}")
+    value = F_bar[i]
+    binary = ""
+
+    # Binary conversion
+    for j in range(precision):
+        value *= 2
+        if value >= 1:
+            binary += '1'
+            value -= 1
+        else:
+            binary += '0'
+
+    # Codeword
+    codeword = binary[:l[i]]
+
+    # Average length
+    avg_length += p[i] * l[i]
+
+    # Entropy
+    entropy -= p[i] * np.log2(p[i])
+
+    print(f"{symbols[i]:<8}{p[i]:<8.3f}{F[i]:<8.3f}{F_bar[i]:<10.4f}{('0.' + binary[:l[i]]):<15}{l[i]:<6}{codeword:<10}")
+
+print(f"\nAverage Codeword Length = {avg_length:.3f} bits")
+print(f"Entropy H = {entropy:.3f} bits")
